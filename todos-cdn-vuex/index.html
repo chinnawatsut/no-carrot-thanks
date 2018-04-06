@@ -1,0 +1,68 @@
+<div id="app" class="ph5">
+    <h1>Todos</h1>
+    <div>
+       <input class="ba f3 bg-transparent hover-bg-blue hover-white" v-model="message">
+       <button @click="addTodo" class="f3 dim ph3 pv2 dib white bg-blue fa fa-plus-circle"></button>
+    </div>
+    <div class="mv3">
+        <div class="tl" v-for="(todo) in normalTodo">
+            <button v-show="!todo.checked" class="fa fa-check green" @click="checkTodo(todo.id)"></button>
+            <button v-show="todo.checked" class="fa fa-times red" @click="uncheckTodo(todo.id)"></button>
+            <button class="fa fa-archive red" @click="archiveTodo(todo.id)"></button>
+            <span :class="{ strike: todo.checked }">{{todo.message}}</span>
+        </div>
+    </div>
+    <h2>Archived ({{archivedTodo.length}})</h2>
+    <div v-for="(todo) in archivedTodo">
+        <button v-show="todo.archived" class="fa fa-archive green" @click="unarchiveTodo(todo.id)"></button>
+        <span :class="{ strike: todo.checked,'moon-gray': todo.archived }">{{todo.message}}</span>
+    </div>
+</div>
+<script src="./vue.js"></script>
+<link rel="stylesheet" href="./tachyons.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<script>
+    const vm = new Vue({
+        data: {
+            todos: [],
+            message: '',
+            counter: 0
+        },
+        methods: {
+            addTodo: function() {
+                this.todos.push({
+                   message: this.message,
+                   checked: false,
+                   archived: false,
+                   id: this.counter
+                })
+                this.counter++
+                this.message = ''
+            },
+            archiveTodo: function(id) {
+                this.todos[this.findIndex(id)].archived = true
+            },
+            unarchiveTodo: function(id) {
+                this.todos[this.findIndex(id)].archived = false
+            },
+            checkTodo: function(id) {
+                this.todos[this.findIndex(id)].checked = true
+            },
+            uncheckTodo: function(id) {
+                this.todos[this.findIndex(id)].checked = false
+            },
+            findIndex: function(id) {
+                var todo = this.todos.find( (todo) => todo.id == id)
+                return todo.id
+            }
+        },
+        computed: {
+            normalTodo: function() {
+                return this.todos.filter( todo => todo.archived == false)
+            },
+            archivedTodo: function() {
+                return this.todos.filter( todo => todo.archived == true)
+            }
+        }
+    }).$mount('#app')
+</script>
