@@ -8,21 +8,77 @@
         <div class="tl" v-for="(todo) in normalTodo">
             <button v-show="!todo.checked" class="fa fa-check green" @click="checkTodo(todo.id)"></button>
             <button v-show="todo.checked" class="fa fa-times red" @click="uncheckTodo(todo.id)"></button>
-            <button class="fa fa-archive red" @click="archiveTodo(todo.id)"></button>
+            <button class="fa fa-archive red" @click="archiveTodo(todo)"></button>
             <span :class="{ strike: todo.checked }">{{todo.message}}</span>
         </div>
     </div>
     <h2>Archived ({{archivedTodo.length}})</h2>
     <div v-for="(todo) in archivedTodo">
-        <button v-show="todo.archived" class="fa fa-archive green" @click="unarchiveTodo(todo.id)"></button>
+        <button v-show="todo.archived" class="fa fa-archive green" @click="unarchiveTodo(todo)"></button>
         <span :class="{ strike: todo.checked,'moon-gray': todo.archived }">{{todo.message}}</span>
     </div>
 </div>
 <script src="./vue.js"></script>
 <link rel="stylesheet" href="./tachyons.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<script src="https://unpkg.com/vuex@3.0.1/dist/vuex.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/es6-promise@4/dist/es6-promise.auto.js"></script>
 <script>
+    const store = new Vuex.Store({
+        state: {
+            todos: [],
+            message: '',
+            counter: 0
+        },
+        mutations: {
+            ['ADD_TODO'] (state, message) {
+                state.todos.push({
+                   message: message,
+                   checked: false,
+                   archived: false,
+                   id: state.counter
+                })
+                state.counter++
+                console.log('COMMIT: add')
+            },
+            ['ARCHIVE_TODO'] (state, index) {
+                console.log('COMMIT: archive')
+                state.todos[index].archived = true
+            },
+            ['UNARCHIVE_TODO'] (state, index) {
+                console.log('COMMIT: unarchive')
+                state.todos[index].archived = false
+            },
+            CHECK_TODO (state, index) {
+                console.log('COMMIT: check')
+                state.todos[index].checked = true
+            },
+            UNCHECK_TODO (state, index) {
+                console.log('COMMIT: uncheck')
+                state.todos[index].checked = false
+            }
+        },
+        actions: {
+            archive ({ commit }, { todo }) {
+                console.log('ACTIONS: archive')
+                commit('ARCHIVE_TODO', todo.id)
+            },
+            unarchive ({ commit }, { todo }) {
+                console.log('ACTIONS: unarchive')
+                commit('UNARCHIVE_TODO', todo.id)
+            }
+        },
+        getters: {
+            normalTodo: function(state) {
+                return state.todos.filter( todo => todo.archived == false)
+            },
+            archivedTodos: function(state) {
+                return state.todos.filter( todo => todo.archived == true)
+            }
+        }
+    })
     const vm = new Vue({
+        store,
         data: {
             todos: [],
             message: '',
@@ -30,38 +86,32 @@
         },
         methods: {
             addTodo: function() {
-                this.todos.push({
-                   message: this.message,
-                   checked: false,
-                   archived: false,
-                   id: this.counter
-                })
-                this.counter++
+                store.commit('ADD_TODO', this.message)
                 this.message = ''
             },
-            archiveTodo: function(id) {
-                this.todos[this.findIndex(id)].archived = true
+            archiveTodo: function(todo) {
+                store.dispatch('archive', {
+                    todo: todo
+                })
             },
-            unarchiveTodo: function(id) {
-                this.todos[this.findIndex(id)].archived = false
+            unarchiveTodo: function(todo) {
+                store.dispatch('unarchive', {
+                    todo: todo
+                })
             },
-            checkTodo: function(id) {
-                this.todos[this.findIndex(id)].checked = true
+            checkTodo: function(id){
+                store.commit('CHECK_TODO', id)
             },
-            uncheckTodo: function(id) {
-                this.todos[this.findIndex(id)].checked = false
-            },
-            findIndex: function(id) {
-                var todo = this.todos.find( (todo) => todo.id == id)
-                return todo.id
+            uncheckTodo: function(id){
+                store.commit('UNCHECK_TODO', id)
             }
         },
         computed: {
-            normalTodo: function() {
-                return this.todos.filter( todo => todo.archived == false)
-            },
+            ...Vuex.mapGetters([
+                'normalTodo'
+            ]),
             archivedTodo: function() {
-                return this.todos.filter( todo => todo.archived == true)
+                return store.getters.archivedTodos
             }
         }
     }).$mount('#app')
